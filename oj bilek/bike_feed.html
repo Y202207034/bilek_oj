@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ridegram – 자전거 라이딩 피드</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, sans-serif; color: #222; background: #f7f8fc; }
+
+        /* Header */
+        .rg-header { position: sticky; top: 0; z-index: 10; background: #ffffff; border-bottom: 1px solid #eaeaf3; }
+        .rg-header-inner { max-width: 1100px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+        .rg-brand { display: flex; align-items: center; gap: 10px; }
+        .rg-logo { font-size: 22px; }
+        .rg-title { margin: 0; font-weight: 800; font-size: 20px; letter-spacing: 0.3px; }
+        .rg-actions { display: flex; align-items: center; gap: 8px; }
+        .rg-btn { padding: 8px 12px; border-radius: 10px; border: 1px solid #dfe3ff; background: #4c6ef5; color: #fff; font-weight: 700; cursor: pointer; transition: transform .15s ease;
+        }
+        .rg-btn:hover { transform: translateY(-1px); }
+        .rg-btn:disabled { opacity: .6; cursor: not-allowed; }
+        .rg-link { text-decoration: none; color: #4c6ef5; font-weight: 700; padding: 8px 10px; border-radius: 10px; }
+
+        /* Main */
+        .rg-main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+        .rg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+        /* Card */
+        .rg-card { background: #fff; border: 1px solid #eceffd; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(76, 110, 245, 0.06); display: flex; flex-direction: column; }
+        .rg-media { width: 100%; aspect-ratio: 1/1; background: linear-gradient(180deg, #f0f3ff 0%, #e9f2ff 100%); display: grid; place-items: center; }
+        .rg-media svg { width: 48%; height: 48%; opacity: 0.9; }
+        .rg-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .rg-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+        .rg-title-text { font-size: 16px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rg-time { font-size: 12px; color: #7a86a6; }
+        .rg-meta { color: #4c6ef5; font-weight: 700; font-size: 14px; }
+        .rg-actions-row { display: flex; gap: 8px; }
+        .rg-action { flex: 1; padding: 8px 10px; border-radius: 10px; border: 1px solid #e5e8ff; background: #fff; font-weight: 800; cursor: pointer; transition: transform .15s ease, background-color .15s ease; }
+        .rg-action:hover { transform: translateY(-1px); }
+        .rg-action-primary { background: #4c6ef5; color: #fff; border-color: #4c6ef5; }
+        .rg-like.liked { color: #ff4d6d; border-color: #ffd0d8; background: #fff5f7; }
+        .rg-like-count { font-weight: 800; margin-left: 6px; color: #5b617a; }
+
+        /* Empty */
+        .rg-empty { text-align: center; color: #7a86a6; padding: 40px 16px; display: none; }
+        .rg-cta { display: inline-block; margin-top: 12px; background: #4c6ef5; color: #fff; padding: 10px 14px; border-radius: 10px; font-weight: 800; text-decoration: none; }
+
+        @media (max-width: 600px){
+            .rg-title { font-size: 18px; }
+            .rg-btn { padding: 8px 10px; }
+        }
+
+        /* 다크 모드 */
+        @media (prefers-color-scheme: dark) {
+            html, body { color: #e6e8f0; background: #0f1220; }
+            .rg-header { background: #12152a; border-bottom-color: #22274a; }
+            .rg-card { background: #14183a; border-color: #212757; box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+            .rg-media { background: linear-gradient(180deg, #111633 0%, #0e1430 100%); }
+            .rg-time { color: #9aa3c1; }
+            .rg-meta { color: #8ea2ff; }
+            .rg-action { background: #101433; border-color: #1b2150; color: #d4daf7; }
+            .rg-action-primary { background: #3b57f0; border-color: #3b57f0; }
+            .rg-empty { color: #9aa3c1; }
+        }
+
+        /* 모션 최소화 */
+        @media (prefers-reduced-motion: reduce) {
+            .rg-btn, .rg-action { transition: none; }
+        }
+    </style>
+    <link rel="stylesheet" href="feed.css">
+    <meta name="theme-color" content="#4c6ef5">
+</head>
+<body>
+    <header class="rg-header">
+        <div class="rg-header-inner">
+            <div class="rg-brand">
+                <div class="rg-logo" aria-hidden="true">🚴‍♂️</div>
+                <h1 class="rg-title">Ridegram</h1>
+            </div>
+            <div class="rg-actions">
+                <!-- 요청: 경로 만들기 버튼 (일단 추가만) -->
+                <button class="rg-btn" id="themeToggleBtn" type="button" aria-pressed="false" title="야간 모드 전환">🌙 야간</button>
+                <button class="rg-btn" id="createRouteBtn" type="button">경로 만들기</button>
+                <a class="rg-link" href="bike_feed.html">피드</a>
+            </div>
+        </div>
+    </header>
+    <div class="rg-toolbar">
+        <div class="rg-chips">
+            <button class="chip chip-active" type="button">전체</button>
+            <button class="chip" type="button">최근 저장</button>
+            <button class="chip" type="button">거리순</button>
+            <button class="chip" type="button">시간순</button>
+        </div>
+    </div>
+    <main class="rg-main">
+        <section id="rgEmpty" class="rg-empty">
+            아직 게시물이 없어요. 첫 라이딩을 기록해보세요!
+            <br>
+            <span class="rg-cta">경로 만들기</span>
+        </section>
+
+        <section class="rg-grid" id="rgGrid"></section>
+    </main>
+
+    <script>
+    (function(){
+        const grid = document.getElementById('rgGrid');
+        const empty = document.getElementById('rgEmpty');
+
+        // 데모용 카드 데이터 (정적)
+        function loadSavedRoutes(){
+            try {
+                const raw = localStorage.getItem('savedRoutes');
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr.sort((a,b)=> (b.id||0)-(a.id||0)) : [];
+            } catch(_) { return []; }
+        }
+
+        function formatDate(iso){
+            try {
+                return new Intl.DateTimeFormat('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(new Date(iso));
+            } catch(_) { return ''; }
+        }
+
+        // 좋아요 상태/카운트 저장소 (localStorage)
+        function getLikeState(){
+            try { return JSON.parse(localStorage.getItem('ridegram_likes')||'{}') || {}; } catch(_){ return {}; }
+        }
+        function setLikeState(state){ localStorage.setItem('ridegram_likes', JSON.stringify(state)); }
+
+        function getLikeCounts(){
+            try { return JSON.parse(localStorage.getItem('ridegram_like_counts')||'{}') || {}; } catch(_){ return {}; }
+        }
+        function setLikeCounts(counts){ localStorage.setItem('ridegram_like_counts', JSON.stringify(counts)); }
+
+        async function sharePost(post){
+            const text = `라이딩: ${post.title} • ${post.distance} • ${post.duration}`;
+            const url = location.href;
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: 'Ridegram', text, url });
+                    return;
+                }
+            } catch(_) {}
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(url);
+                    alert('링크가 복사되었습니다. 원하는 곳에 붙여넣기 하세요!');
+                    return;
+                }
+            } catch(_) {}
+            const ta = document.createElement('textarea');
+            ta.value = url; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(_) {}
+            ta.remove(); alert('링크가 복사되었습니다.');
+        }
+
+        function projectRouteToBox(coords, width, height) {
+            const lats = coords.map(p=>p[0]);
+            const lngs = coords.map(p=>p[1]);
+            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+            const pad = 6; const w = width - pad*2; const h = height - pad*2;
+            const dx = Math.max(maxLng-minLng, 1e-6); const dy = Math.max(maxLat-minLat, 1e-6);
+            return coords.map(([lat,lng])=>{
+                const x = pad + ((lng-minLng)/dx)*w;
+                const y = pad + (1- (lat-minLat)/dy)*h;
+                return [Math.round(x*100)/100, Math.round(y*100)/100];
+            });
+        }
+
+        function createCard(post){
+            const card = document.createElement('article');
+            card.className = 'rg-card';
+
+            const media = document.createElement('div');
+            media.className = 'rg-media';
+            // 저장된 경로가 있으면 경로 미리보기, 없으면 기본 아이콘
+            if (Array.isArray(post.route) && post.route.length > 1) {
+                const pts = projectRouteToBox(post.route, 100, 100).map(p=>p.join(',')).join(' ');
+                media.innerHTML = `
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="0" y="0" width="100" height="100" fill="url(#bg)"/>
+                    <defs>
+                        <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#f0f3ff"/>
+                            <stop offset="100%" stop-color="#e9f2ff"/>
+                        </linearGradient>
+                    </defs>
+                    <polyline points="${pts}" fill="none" stroke="#4c6ef5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>`;
+            } else {
+                media.innerHTML = `
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="30" cy="70" r="15" stroke="#4c6ef5" stroke-width="4" fill="none"/>
+                    <circle cx="78" cy="70" r="15" stroke="#4c6ef5" stroke-width="4" fill="none"/>
+                    <path d="M30 70 L50 55 L65 70" stroke="#4c6ef5" stroke-width="4" fill="none"/>
+                    <path d="M50 55 L60 40 L75 40" stroke="#4c6ef5" stroke-width="4" fill="none"/>
+                    <circle cx="60" cy="40" r="4" fill="#4c6ef5"/>
+                </svg>`;
+            }
+
+            const body = document.createElement('div');
+            body.className = 'rg-body';
+
+            const row = document.createElement('div');
+            row.className = 'rg-row';
+            const title = document.createElement('div');
+            title.className = 'rg-title-text';
+            title.textContent = post.title;
+            const time = document.createElement('div');
+            time.className = 'rg-time';
+            time.textContent = formatDate(post.createdAt || new Date());
+            row.appendChild(title);
+            row.appendChild(time);
+
+            const meta = document.createElement('div');
+            meta.className = 'rg-meta';
+            const dist = typeof post.distance === 'number' ? `${post.distance.toFixed(1)}km` : String(post.distance||'0km');
+            const dur = typeof post.duration === 'number' ? `${post.duration}분` : String(post.duration||'0분');
+            meta.textContent = `거리 ${dist} · ${dur}`;
+
+            const actions = document.createElement('div');
+            actions.className = 'rg-actions-row';
+            const like = document.createElement('button');
+            like.type = 'button';
+            like.className = 'rg-action rg-like';
+            like.setAttribute('aria-pressed', 'false');
+            like.innerHTML = '❤ 좋아요 <span class="rg-like-count" aria-hidden="true"></span>';
+
+            const share = document.createElement('button');
+            share.type = 'button';
+            share.className = 'rg-action rg-action-primary';
+            share.textContent = '공유';
+            actions.appendChild(like);
+            actions.appendChild(share);
+
+            body.appendChild(row);
+            body.appendChild(meta);
+            body.appendChild(actions);
+
+            card.appendChild(media);
+            card.appendChild(body);
+            return card;
+        }
+
+        function render(){
+            grid.innerHTML = '';
+            const posts = loadSavedRoutes();
+            if (!posts.length){
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            const likeState = getLikeState();
+            const likeCounts = Object.assign({} , getLikeCounts());
+
+            posts.forEach(p => {
+                if (likeCounts[p.id] == null) likeCounts[p.id] = Math.floor(Math.random()*20)+1; // 기본치
+                const card = createCard(p);
+                const likeBtn = card.querySelector('.rg-like');
+                const countEl = card.querySelector('.rg-like-count');
+                const isLiked = Boolean(likeState[p.id]);
+                likeBtn.classList.toggle('liked', isLiked);
+                likeBtn.setAttribute('aria-pressed', String(isLiked));
+                countEl.textContent = String(likeCounts[p.id] + (isLiked ? 1 : 0));
+
+                likeBtn.addEventListener('click', () => {
+                    const currentlyLiked = Boolean(getLikeState()[p.id]);
+                    const nextState = Object.assign({}, getLikeState());
+                    if (currentlyLiked) { delete nextState[p.id]; } else { nextState[p.id] = true; }
+                    setLikeState(nextState);
+                    const nowLiked = Boolean(nextState[p.id]);
+                    likeBtn.classList.toggle('liked', nowLiked);
+                    likeBtn.setAttribute('aria-pressed', String(nowLiked));
+                    countEl.textContent = String(likeCounts[p.id] + (nowLiked ? 1 : 0));
+                });
+
+                const shareBtn = card.querySelector('.rg-action-primary');
+                shareBtn.addEventListener('click', () => sharePost(p));
+
+                grid.appendChild(card);
+            });
+            setLikeCounts(likeCounts);
+        }
+
+        document.getElementById('createRouteBtn').addEventListener('click', function(){
+            window.location.href = 'route_builder.html';
+        });
+
+        document.addEventListener('DOMContentLoaded', render);
+    })();
+    </script>
+    <script src="feed.js"></script>
+</body>
+</html>
+
+
