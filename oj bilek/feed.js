@@ -20,6 +20,32 @@
   function getLikeCounts(){ try { return JSON.parse(localStorage.getItem('ridegram_like_counts')||'{}') || {}; } catch(_){ return {}; } }
   function setLikeCounts(counts){ localStorage.setItem('ridegram_like_counts', JSON.stringify(counts)); }
 
+  // 댓글 저장소 (localStorage)
+  function getAllComments(){
+    try { return JSON.parse(localStorage.getItem('ridegram_comments')||'{}') || {}; } catch(_){ return {}; }
+  }
+  function setAllComments(data){
+    localStorage.setItem('ridegram_comments', JSON.stringify(data));
+  }
+  function getCommentsByPostId(postId){
+    const all = getAllComments();
+    const list = all[String(postId)] || [];
+    return Array.isArray(list) ? list : [];
+  }
+  function addComment(postId, text){
+    const trimmed = String(text||'').trim();
+    if (!trimmed) return null;
+    const all = getAllComments();
+    const key = String(postId);
+    const now = new Date().toISOString();
+    const newItem = { id: (Date.now()+Math.random()).toString(36), text: trimmed, createdAt: now };
+    const list = Array.isArray(all[key]) ? all[key].slice() : [];
+    list.push(newItem);
+    all[key] = list;
+    setAllComments(all);
+    return newItem;
+  }
+
   function projectRouteToBox(coords, width, height) {
     const lats = coords.map(p=>p[0]);
     const lngs = coords.map(p=>p[1]);
@@ -69,6 +95,13 @@
     const title = document.createElement('div');
     title.className = 'rg-title-text';
     title.textContent = post.title;
+    title.style.cursor = 'pointer';
+    title.setAttribute('role', 'button');
+    title.setAttribute('tabindex', '0');
+    title.title = '클릭하여 경로 수정';
+    const goEdit = ()=>{ window.location.href = `route_builder.html?editId=${encodeURIComponent(post.id)}`; };
+    title.addEventListener('click', goEdit);
+    title.addEventListener('keydown', (e)=>{ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goEdit(); } });
     const time = document.createElement('div');
     time.className = 'rg-time';
     time.textContent = formatDate(post.createdAt || new Date());
@@ -102,6 +135,69 @@
     body.appendChild(row);
     body.appendChild(meta);
     body.appendChild(actions);
+
+    // 댓글 영역
+    const commentsWrap = document.createElement('div');
+    commentsWrap.className = 'rg-comments';
+
+    // 댓글 리스트
+    const listEl = document.createElement('div');
+    listEl.className = 'rg-comment-list';
+
+    // 입력 폼
+    const form = document.createElement('form');
+    form.className = 'rg-comment-form';
+    form.setAttribute('autocomplete', 'off');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '댓글을 입력하세요';
+    input.maxLength = 200;
+    input.className = 'rg-comment-input';
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.textContent = '등록';
+    submit.className = 'rg-action';
+    form.appendChild(input);
+    form.appendChild(submit);
+
+    function renderComments(){
+      const comments = getCommentsByPostId(post.id);
+      listEl.innerHTML = '';
+      if (!comments.length){
+        const emptyEl = document.createElement('div');
+        emptyEl.className = 'rg-comment-empty';
+        emptyEl.textContent = '첫 댓글을 남겨보세요!';
+        listEl.appendChild(emptyEl);
+      } else {
+        comments.forEach(c => {
+          const item = document.createElement('div');
+          item.className = 'rg-comment-item';
+          const textEl = document.createElement('div');
+          textEl.className = 'rg-comment-text';
+          textEl.textContent = c.text;
+          const timeEl = document.createElement('div');
+          timeEl.className = 'rg-comment-time';
+          timeEl.textContent = formatDate(c.createdAt);
+          item.appendChild(textEl);
+          item.appendChild(timeEl);
+          listEl.appendChild(item);
+        });
+      }
+    }
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const val = input.value;
+      const created = addComment(post.id, val);
+      if (created){
+        input.value = '';
+        renderComments();
+      }
+    });
+
+    commentsWrap.appendChild(listEl);
+    commentsWrap.appendChild(form);
+    body.appendChild(commentsWrap);
     card.appendChild(media);
     card.appendChild(body);
     return card;

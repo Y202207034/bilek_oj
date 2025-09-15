@@ -41,6 +41,16 @@
         .rg-like.liked { color: #ff4d6d; border-color: #ffd0d8; background: #fff5f7; }
         .rg-like-count { font-weight: 800; margin-left: 6px; color: #5b617a; }
 
+        /* Comments */
+        .rg-comments { border-top: 1px solid #eceffd; padding-top: 8px; margin-top: 4px; display: flex; flex-direction: column; gap: 8px; }
+        .rg-comment-list { display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow: auto; padding-right: 2px; }
+        .rg-comment-empty { color: #7a86a6; font-size: 13px; }
+        .rg-comment-item { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; background: #f7f8ff; border: 1px solid #eceffd; border-radius: 10px; padding: 6px 8px; }
+        .rg-comment-text { font-size: 14px; color: #222; overflow-wrap: anywhere; }
+        .rg-comment-time { font-size: 11px; color: #7a86a6; white-space: nowrap; }
+        .rg-comment-form { display: flex; gap: 6px; }
+        .rg-comment-input { flex: 1; border: 1px solid #e5e8ff; border-radius: 10px; padding: 8px 10px; font-size: 14px; }
+
         /* Empty */
         .rg-empty { text-align: center; color: #7a86a6; padding: 40px 16px; display: none; }
         .rg-cta { display: inline-block; margin-top: 12px; background: #4c6ef5; color: #fff; padding: 10px 14px; border-radius: 10px; font-weight: 800; text-decoration: none; }
@@ -61,6 +71,9 @@
             .rg-action { background: #101433; border-color: #1b2150; color: #d4daf7; }
             .rg-action-primary { background: #3b57f0; border-color: #3b57f0; }
             .rg-empty { color: #9aa3c1; }
+            .rg-comment-item { background: #111633; border-color: #212757; }
+            .rg-comment-text { color: #e6e8f0; }
+            .rg-comment-input { background: #0f1220; color: #e6e8f0; border-color: #1b2150; }
         }
 
         /* 모션 최소화 */

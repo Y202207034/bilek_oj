@@ -33,11 +33,23 @@
     saveBtn.disabled = !(points.length >= 2 && titleEl.value.trim().length);
   }
 
+  // 점 추가 & 드래그 편집을 위한 헬퍼
+  function makeDraggableMarker(latlng, index){
+    const mk = L.circleMarker(latlng, { radius: 6, color: '#4c6ef5', weight: 2, fillColor: '#4c6ef5', fillOpacity: 1 });
+    mk.addTo(map);
+    // 간단 드래그: mousedown -> mousemove -> mouseup
+    let dragging = false;
+    function onMouseMove(ev){ if (!dragging) return; const p = ev.latlng; points[index] = p; mk.setLatLng(p); refresh(); }
+    function onMouseUp(){ if (!dragging) return; dragging = false; map.off('mousemove', onMouseMove); map.off('mouseup', onMouseUp); }
+    mk.on('mousedown', ()=>{ dragging = true; map.on('mousemove', onMouseMove); map.on('mouseup', onMouseUp); });
+    return mk;
+  }
+
   map.on('click', (e)=>{
     const p = e.latlng;
+    const idx = points.length;
     points.push(p);
-    const mk = L.circleMarker(p, { radius: 5, color: '#4c6ef5', weight: 2, fillColor: '#4c6ef5', fillOpacity: 1 });
-    mk.addTo(map);
+    const mk = makeDraggableMarker(p, idx);
     markers.push(mk);
     refresh();
   });
@@ -69,15 +81,54 @@
 
     let saved = [];
     try { saved = JSON.parse(localStorage.getItem('savedRoutes')||'[]'); if(!Array.isArray(saved)) saved=[]; } catch(_) { saved=[]; }
-    const id = (saved.length ? Math.max(...saved.map(r=>r.id||0)) : 0) + 1;
-    const route = { id, title, route: coords, distance, duration, createdAt };
-    saved.push(route);
+    const params = new URLSearchParams(location.search);
+    const editId = params.get('editId');
+    if (editId){
+      const idNum = Number(editId);
+      const idx = saved.findIndex(r => Number(r.id) === idNum);
+      if (idx >= 0){
+        const prev = saved[idx];
+        saved[idx] = { id: prev.id, title, route: coords, distance, duration, createdAt: prev.createdAt || createdAt };
+      } else {
+        const id = idNum || ((saved.length ? Math.max(...saved.map(r=>r.id||0)) : 0) + 1);
+        saved.push({ id, title, route: coords, distance, duration, createdAt });
+      }
+    } else {
+      const id = (saved.length ? Math.max(...saved.map(r=>r.id||0)) : 0) + 1;
+      saved.push({ id, title, route: coords, distance, duration, createdAt });
+    }
     localStorage.setItem('savedRoutes', JSON.stringify(saved));
 
     window.location.href = 'bike_feed.html';
   }
 
   saveBtn.addEventListener('click', saveRoute);
+
+  // 편집 모드로 진입 시 기존 경로 불러오기
+  (function initEdit(){
+    const params = new URLSearchParams(location.search);
+    const editId = params.get('editId');
+    if (!editId) return;
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem('savedRoutes')||'[]'); if(!Array.isArray(saved)) saved=[]; } catch(_) { saved=[]; }
+    const route = saved.find(r => String(r.id) === String(editId));
+    if (!route || !Array.isArray(route.route) || route.route.length === 0) return;
+    titleEl.value = route.title || '';
+    // 좌표 로드
+    route.route.forEach((arr, i)=>{
+      const p = L.latLng(arr[0], arr[1]);
+      points.push(p);
+      const mk = makeDraggableMarker(p, i);
+      markers.push(mk);
+    });
+    // 보기 좋은 영역으로 fit
+    try {
+      const latlngs = points.map(p=>[p.lat,p.lng]);
+      const bounds = L.latLngBounds(latlngs);
+      map.fitBounds(bounds.pad(0.2));
+    } catch(_){}
+    refresh();
+  })();
 })();
 
 
